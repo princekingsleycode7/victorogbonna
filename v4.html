@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhD Research Questionnaire</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-start: #667eea;
+            --primary-end: #000;
+            --secondary-start: #f093fb;
+            --secondary-end: #f5576c;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --border-color: #e9ecef;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 95%;
+            text-align: center;
+            position: relative;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-start), var(--primary-end));
+        }
+        h1 { color: var(--text-dark); margin-bottom: 10px; font-weight: 300; font-size: 1.8em; }
+        h2 { color: var(--text-dark); margin-bottom: 25px; font-weight: 500; font-size: 1.8em; }
+        p { color: var(--text-light); font-size: 1.1em; margin-bottom: 20px; }
+        .welcome-details { text-align: left; margin: 20px auto; max-width: 500px; font-size: 0.9em; color: #555; border-left: 3px solid var(--primary-start); padding-left: 15px;}
+        .welcome-details strong { color: var(--text-dark); }
+
+        .screen { display: none; animation: fadeIn 0.5s ease-in; }
+        .screen.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%);
+            color: white; border: none; padding: 15px 30px; border-radius: 50px;
+            font-size: 16px; cursor: pointer; transition: all 0.3s ease; font-weight: 500;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: linear-gradient(135deg, var(--secondary-start) 0%, var(--secondary-end) 100%); }
+        .btn-back { background: #6c757d; }
+
+        .welcome-buttons, .admin-actions { display: flex; gap: 20px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+        .input-group { margin: 30px 0; text-align: left; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 15px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 16px;
+        }
+        input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: var(--primary-start); }
+
+        .page-content { text-align: left; }
+        .question-block {
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .question-text { font-size: 1.1em; color: var(--text-dark); margin-bottom: 15px; font-weight: 500; }
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .option-item:hover { background-color: #e9ecef; }
+        .likert-scale { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; }
+        .likert-scale .option-item { flex-direction: column; }
+
+        .progress-bar { background: #e9ecef; height: 8px; border-radius: 4px; margin: 20px 0; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, var(--primary-start), var(--primary-end)); height: 100%; transition: width 0.5s ease; }
+        .progress-text { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .navigation { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; }
+
+        /* Admin Styles */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
+        .stat-card { background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; }
+        .stat-number { font-size: 2.5em; font-weight: bold; }
+        .stat-label { font-size: 14px; opacity: 0.9; }
+        .chart-container { background: white; border-radius: 15px; padding: 20px; margin: 20px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 1.2em; font-weight: 600; margin-bottom: 15px; }
+
+        /* Completion Screen */
+        .success-message { background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; border-radius: 15px; margin: 20px 0; }
+        .success-icon { font-size: 4em; margin-bottom: 20px; }
+    </style>
+   
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="screen active">
+            <h1>PhD Research Questionnaire</h1>
+            <div class="welcome-details">
+                <p><strong>Project Topic:</strong> "Developing a Sustainable Leadership Model for Learning Organizations In Nigeria"</p>
+                <p><strong>Student Name:</strong> Chukwuma Victor Ogbonnaya</p>
+                <p><strong>Supervisor:</strong> Professor George Papageorgiou</p>
+            </div>
+            <p>This questionnaire is solely for academic research. Your responses are confidential and anonymous. Thank you for your valuable contribution.</p>
+            <div class="welcome-buttons">
+                <button class="btn" onclick="startQuestionnaire()">📝 Begin Questionnaire</button>
+                <button class="btn btn-secondary" onclick="showAdmin()">👨‍💼 Admin Dashboard</button>
+            </div>
+        </div>
+
+        <!-- Name Entry Screen -->
+        <div id="nameScreen" class="screen">
+            <h1>Confidentiality Notice</h1>
+            <p>Please provide a name or alias to begin. This is only used to save your progress if you need to take a break. Your identity will be kept completely anonymous in the final research data.</p>
+            <div class="input-group">
+                <label for="userName">Your Name/Alias:</label>
+                <input type="text" id="userName" placeholder="Enter a name or alias..." />
+            </div>
+            <div class="navigation">
+                <button class="btn btn-back" onclick="showWelcome()">← Back</button>
+                <button class="btn" onclick="startWithName()">Continue →</button>
+            </div>
+        </div>
+
+        <!-- Questionnaire Page Screen -->
+        <div id="pageScreen" class="screen">
+            <div class="progress-text">
+                Page <span id="currentPage">1</span> of <span id="totalPages">X</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <h2 id="pageTitle">Page Title</h2>
+            <div id="pageContent" class="page-content"></div>
+
+            <div class="navigation">
+                <button class="btn btn-back" onclick="previousPage()" id="backBtn">← Previous</button>
+                <button class="btn" onclick="nextPage()" id="nextBtn" disabled>Save & Continue →</button>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div id="completionScreen" class="screen">
+            <div class="success-message">
+                <div class="success-icon">🎉</div>
+                <h2>Thank You!</h2>
+                <p>You have successfully completed the questionnaire. Your feedback has been recorded anonymously.</p>
+            </div>
+            <button class="btn" onclick="endQuestionnaire()">🏠 Back to Home</button>
+        </div>
+
+        <!-- Admin Screens (Unchanged) -->
+        <div id="adminLoginScreen" class="screen">
+            <h1>🔐 Admin Access</h1>
+            <div class="input-group"><label for="adminPin">Admin PIN:</label><input type="password" id="adminPin" placeholder="Enter PIN..." maxlength="6" /></div>
+            <div id="pinError" style="color: #f5576c; margin-top: 15px; display: none;">Incorrect PIN. Please try again.</div>
+            <div class="navigation"><button class="btn btn-back" onclick="showWelcome()">← Back</button><button class="btn" onclick="verifyAdminPin()">Access Dashboard →</button></div>
+        </div>
+        <div id="adminScreen" class="screen">
+            <h1>📊 Admin Dashboard</h1>
+            <div class="stats-grid"><div class="stat-card"><div class="stat-number" id="totalResponses">0</div><div class="stat-label">Total Responses</div></div></div>
+            <div class="admin-actions"><button class="btn" onclick="generatePDFReport()">📄 Download PDF Report</button><button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All Data</button><button class="btn btn-back" onclick="showWelcome()">← Back to Home</button></div>
+            <div id="chartsContainer"></div>
+        </div>
+    </div>
+
+<script>
+// --- DATA STRUCTURE (100% ACCURATE FROM DOCUMENT) ---
+const likertOptions = [
+    { value: 1, label: "Least Agree" }, { value: 2, label: "Disagree" },
+    { value: 3, label: "Neutral" }, { value: 4, label: "Agree" }, { value: 5, label: "Fully Agree" }
+];
+
+const pages = [
+    {
+        title: "Part A: Participant Information",
+        questions: [
+            { id: 1, text: "A1: Gender", type: "multiple", options: [{ value: 1, label: "Male" }, { value: 2, label: "Female" }] },
+            { id: 2, text: "A2: Age", type: "multiple", options: [{ value: 1, label: "Below 20 years" }, { value: 2, label: "Between 21-30 years" }, { value: 3, label: "Between 31-40 years" }, { value: 4, label: "Between 41-50 years" }, { value: 5, label: "Over 50 Years" }] },
+            { id: 3, text: "A3: Position at work", type: "multiple", options: [{ value: 1, label: "Basic/Operational staff" }, { value: 2, label: "Entry level - Supervisory staff" }, { value: 3, label: "Mid-level - Department heads" }, { value: 4, label: "Upper level (Top Administrator)" }] },
+            { id: 4, text: "A4: Educational Level", type: "multiple", options: [{ value: 1, label: "First School Leaving Certificate" }, { value: 2, label: "Senior Secondary School Certificate Examination" }, { value: 3, label: "College" }, { value: 4, label: "University-Bachelor degree Bsc,BA, etc" }, { value: 5, label: "University-Master or Ph.D degree" }, { value: 6, label: "Other - specify..." }] },
+            { id: 5, text: "A.5. Years of service in the organisation you now work for", type: "multiple", options: [{ value: 1, label: "below 1 year" }, { value: 2, label: "between 2 and 4 years" }, { value: 3, label: "more than 5 years" }] },
+            { id: 6, text: "A.6. Monthly Salary", type: "multiple", options: [{ value: 1, label: "below N70,000" }, { value: 2, label: "between N70,000 and N80,000" }, { value: 3, label: "between N81,000 and 90,000" }, { value: 4, label: "between N91,000 and 100,000" }, { value: 5, label: "Over 100,000" }] },
+            { id: 7, text: "A.7. Department/Division you currently work in", type: "multiple", options: [{ value: 1, label: "Agricultural Extension Agent" }, { value: 2, label: "Agricultural Extension Officer" }] },
+            { id: 8, text: "A.8. Participation to training programmes (seminars) during the last 12 months", type: "multiple", options: [{ value: 1, label: "participated in one training programme" }, { value: 2, label: "participated in two training programmes" }, { value: 3, label: "participated in three or more training programmes" }] }
+        ]
+    },
+    {
+        title: "Part B: Learning Organization Performance",
+        questions: [
+            { id: 9, text: "1. My understanding during training helps me fully in written passage I read", type: "likert", options: likertOptions },
+            { id: 10, text: "2. I write down quickly and clearly my thoughts after learning organization training", type: "likert", options: likertOptions },
+            { id: 11, text: "3. I compare without difficulty the relative size of numbers e.g. I distinguish which number is bigger 125 or 215 as a result of learning organization training.", type: "likert", options: likertOptions },
+            { id: 12, text: "4. I understand easily the main issue in a discussion after learning organization training.", type: "likert", options: likertOptions },
+            { id: 13, text: "5. I can participate in long discussions and express my own views after learning organization training", type: "likert", options: likertOptions }
+        ]
+    },
+    {
+        title: "Part B: Foundations Factor",
+        questions: [
+            { id: 14, text: "6. I can easily follow a joke or a story told from other people through the adoption of 'role clarity' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 15, text: "7. I know all the procedures related to the execution of my duties through the adoption of 'common purpose' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 16, text: "8. I find opportunities to give solutions to serious problems that appear in my work through the adoption of 'united goals' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 17, text: "9. I suggest ways to improve the procedures in my work even though there are no serious problems through the adoption of 'united on priorities' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 18, text: "10. I think very carefully before I do something instead of doing it at once and adjust my actions accordingly later through the adoption of 'aligned priorities' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 19, text: "11. I believe that the decisions taken after careful thought are better than those taken based on intuition through the adoption of 'act on commitments' of the foundations factor.", type: "likert", options: likertOptions },
+            { id: 20, text: "12. When I write a passage, I usually make many drafts before I reach the final one through the adoption of 'effective decision-making' of the foundations factor.", type: "likert", options: likertOptions }
+        ]
+    },
+    {
+        title: "Part B: Relationship Factors",
+        questions: [
+            { id: 21, text: "13. In discussions I prefer to adopt a 'low profile' rather than do most of the talking and I always listen first to other people's points before I tell my own view through the adoption of 'respect contributions' of the relationships factor", type: "likert", options: likertOptions },
+            { id: 22, text: "14. I react immediately to situations as they occur rather than plan how to face them if they happen in the future through the adoption of 'civility' of the relationships factor.", type: "likert", options: likertOptions },
+            { id: 23, text: "15. I act without thinking the possible repercussions because I believe it is better to act immediately through the adoption of 'psych safety' of the relationships factor.", type: "likert", options: likertOptions },
+            { id: 24, text: "16. I believe that rules can be broken sometimes in order to achieve certain things rather than repeating routine tasks through the adoption of 'ask for help' of the relationships factor.", type: "likert", options: likertOptions },
+            { id: 25, text: "17. I enjoy doing new things, rather than repeating routine tasks because of adoption of", type: "likert", options: likertOptions },
+            { id: 26, text: "18. I prefer to put things in their place and organise things, rather than react to situations through the adoption of 'concerns address' of the relationships factor.", type: "likert", options: likertOptions },
+            { id: 27, text: "19. I prefer the meetings that stick to the set agenda and are conducted methodically through the adoption of 'model respect' of the relationships factor.", type: "likert", options: likertOptions },
+            { id: 28, text: "20. I prefer to solve problems by taking a step-by-step approach through the adoption of 'honest' of the relationships factor.", type: "likert", options: likertOptions }
+        ]
+    },
+    {
+        title: "Part B: Function Factors",
+        questions: [
+            { id: 29, text: "21. I tend to be a perfectionist through the adoption of 'productive discussions' of the functions factor", type: "likert", options: likertOptions },
+            { id: 30, text: "22. In discussions I like to get straight to the point, rather than introduce it with relevant or irrelevant points through the adoption of 'time on discussions' of the functions factor.", type: "likert", options: likertOptions },
+            { id: 31, text: "23. I like people who approach things realistically rather than theoretically through the adoption of 'resolve conflict' of the functions factor", type: "likert", options: likertOptions },
+            { id: 32, text: "24. I am keen to try things out to see if they work in practice through the adoption of 'accountability' of the functions factor.", type: "likert", options: likertOptions },
+            { id: 33, text: "25. I believe that what matters most is whether something works in practice through the adoption of 'reflect on performance' of the functions factor.", type: "likert", options: likertOptions },
+            { id: 34, text: "26. I prefer to participate in an in-house training programme which is organised by my employer rather than participating in open seminars which are offered by training institutions (open seminars) through the adoption of 'share info' of the functions factor", type: "likert", options: likertOptions },
+            { id: 35, text: "27. I prefer to learn while working under the guidance of a colleague through the adoption of 'communication' of the functions factor.", type: "likert", options: likertOptions },
+            { id: 36, text: "28. I learn through discussions at work or during business meeting s through the adoption of 'perform roles' of the functions factor", type: "likert", options: likertOptions },
+            { id: 37, text: "29. I learn through the participation in open seminars which are offered by training institutions rather than through the participation in in-house training programmes which are organised by my employer in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 38, text: "30. I learn through the questions I ask external business associates and suppliers.", type: "likert", options: likertOptions },
+            { id: 39, text: "31. I learn by reading professional journals or professional websites in the internet.", type: "likert", options: likertOptions }
+        ]
+    },
+    {
+        title: "Part B: Organizational Climate and Culture",
+        questions: [
+            { id: 40, text: "32. There is support and encouragement when I put forward a suggestion to my superiors.", type: "likert", options: likertOptions },
+            { id: 41, text: "33. There is encouragement to my superiors for submitting new ideas to top management in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 42, text: "34. There is encouragement by the superiors in taking risks, since there is an understanding that there is an acceptable chance to fail.", type: "likert", options: likertOptions },
+            { id: 43, text: "35. My colleagues develop activities in new unknown areas where our organisation was never before involved.", type: "likert", options: likertOptions },
+            { id: 44, text: "36. It is part of the job of all colleagues to collect and report any information on what is happening outside our organisation relevant to our business", type: "likert", options: likertOptions },
+            { id: 45, text: "37. There are systems and procedures in our organisation for receiving and utilising the information received from the external environment of our organisation.", type: "likert", options: likertOptions },
+            { id: 46, text: "38. The staff is encouraged to communicate with clients, suppliers, competitors, technology centers, colleges/universities etc", type: "likert", options: likertOptions },
+            { id: 47, text: "39. I can communicate with the members of my colleagues' teams", type: "likert", options: likertOptions },
+            { id: 48, text: "40. The staff is encouraged to communicate between themselves in the cassava production industry", type: "likert", options: likertOptions },
+            { id: 49, text: "41. The managers facilitate the communication with the staff in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 50, text: "42. The members of different operational teams cooperate between themselves.", type: "likert", options: likertOptions },
+            { id: 51, text: "43. The managers of the organisation often involve staff in taking important decisions.", type: "likert", options: likertOptions },
+            { id: 52, text: "44. The policies of the organisation are significantly affected by the staff's opinions in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 53, text: "45. The staff feels that it participates in the major decisions taken by the organisation.", type: "likert", options: likertOptions }
+        ]
+    },
+    {
+        title: "Part B: Final Impressions and Self-Efficacy",
+        questions: [
+            { id: 54, text: "46. The staff feels happy and satisfied at work in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 55, text: "47. The staff is motivated to do their duties in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 56, text: "48. I have the impression that the organisation I work for has many sales and has a big share in the market", type: "likert", options: likertOptions },
+            { id: 57, text: "49. I have the impression that the organisation I work for is in good financial condition and pays on time all its responsibilities", type: "likert", options: likertOptions },
+            { id: 58, text: "50. I have the impression that the organisation I work for is profitable.", type: "likert", options: likertOptions },
+            { id: 59, text: "51. I believe that personnel training contributes to the productivity and profitability of the enterprise/organisation", type: "likert", options: likertOptions },
+            { id: 60, text: "52. I believe I will receive an excellent grade in appraising my learning ability at work.", type: "likert", options: likertOptions },
+            { id: 61, text: "53. I am certain I can understand the most difficult material presented to me during my work in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 62, text: "54. I am confident I can learn the basic concepts taught during my work.", type: "likert", options: likertOptions },
+            { id: 63, text: "55. I am confident I can understand the most complex material presented by my superiors and colleagues during my work.", type: "likert", options: likertOptions },
+            { id: 64, text: "56. I am confident I can do an excellent job on the assignments and challenges I face during my work.", type: "likert", options: likertOptions },
+            { id: 65, text: "57. I expect to do well in my work in the cassava production industry.", type: "likert", options: likertOptions },
+            { id: 66, text: "58. I am certain I can master the skills being taught during my work", type: "likert", options: likertOptions },
+            { id: 67, text: "59. Considering the difficulty of the work, my instructors, and my skills, I think I will do well in my work in the cassava production industry.", type: "likert", options: likertOptions }
+        ]
+    }
+];
+
+const allQuestions = pages.flatMap(p => p.questions);
+
+// --- APPLICATION STATE & CONFIG ---
+let currentUser = null;
+let currentPageIndex = 0;
+let userResponses = {};
+let allResponses = {}; // For admin
+const LOCAL_STORAGE_KEY = 'phdQuestionnaireState';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD2LGQOhqO-ZcGM82ubVgBvV8pG2gViOZE",
+  authDomain: "swiftauthservices.firebaseapp.com",
+  projectId: "swiftauthservices",
+  storageBucket: "swiftauthservices.appspot.com",
+  messagingSenderId: "231147141719",
+  appId: "1:231147141719:web:1a1b4e0937cf2af0ae0112"
+};
+
+// --- INITIALIZE FIREBASE & UTILITIES ---
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+function generateUserID(name) {
+    const timestamp = Date.now();
+    return `user_${btoa(name + timestamp).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)}`;
+}
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+// --- STATE MANAGEMENT (localStorage) ---
+function saveStateToLocalStorage() {
+    const state = { currentUser, currentPageIndex, userResponses };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+}
+function loadStateFromLocalStorage() {
+    const stateJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return stateJSON ? JSON.parse(stateJSON) : null;
+}
+function clearStateFromLocalStorage() {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+}
+
+// --- CORE QUESTIONNAIRE LOGIC ---
+function startQuestionnaire() {
+    showScreen('nameScreen');
+    document.getElementById('userName').focus();
+}
+
+function startWithName() {
+    const name = document.getElementById('userName').value.trim();
+    if (!name) { alert('Please enter your name/alias to continue.'); return; }
+
+    currentUser = generateUserID(name);
+    userResponses = {};
+    currentPageIndex = 0;
+    saveStateToLocalStorage();
+    displayPage();
+}
+
+function displayPage() {
+    showScreen('pageScreen');
+    const page = pages[currentPageIndex];
+    document.getElementById('pageTitle').textContent = page.title;
+    document.getElementById('currentPage').textContent = currentPageIndex + 1;
+    document.getElementById('totalPages').textContent = pages.length;
+
+    const progress = ((currentPageIndex) / pages.length) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    const contentDiv = document.getElementById('pageContent');
+    contentDiv.innerHTML = '';
+    window.scrollTo(0, 0); // Scroll to top of page
+
+    page.questions.forEach(q => {
+        const questionBlock = document.createElement('div');
+        questionBlock.className = 'question-block';
+
+        let optionsHTML = '';
+        if (q.type === 'likert') {
+            optionsHTML = `<div class="likert-scale">`;
+            q.options.forEach(opt => {
+                const isChecked = userResponses[q.id] === opt.value;
+                optionsHTML += `<label class="option-item"><input type="radio" name="question-${q.id}" value="${opt.value}" onchange="handleResponseChange(${q.id}, ${opt.value})" ${isChecked ? 'checked' : ''}><span>${opt.label}</span></label>`;
+            });
+            optionsHTML += `</div>`;
+        } else { // 'multiple'
+            optionsHTML = `<div class="options-list">`;
+            q.options.forEach(opt => {
+                const isChecked = userResponses[q.id] === opt.value;
+                optionsHTML += `<label class="option-item"><input type="radio" name="question-${q.id}" value="${opt.value}" onchange="handleResponseChange(${q.id}, ${opt.value})" ${isChecked ? 'checked' : ''}><span>${opt.label}</span></label>`;
+            });
+            optionsHTML += `</div>`;
+        }
+
+        questionBlock.innerHTML = `<div class="question-text">${q.text}</div>${optionsHTML}`;
+        contentDiv.appendChild(questionBlock);
+    });
+
+    document.getElementById('backBtn').style.display = currentPageIndex === 0 ? 'none' : 'inline-block';
+    validatePage();
+}
+
+function handleResponseChange(questionId, value) {
+    userResponses[questionId] = value;
+    saveStateToLocalStorage();
+    validatePage();
+}
+
+function validatePage() {
+    const questionsOnPage = pages[currentPageIndex].questions;
+    const allAnswered = questionsOnPage.every(q => userResponses[q.id] !== undefined);
+    document.getElementById('nextBtn').disabled = !allAnswered;
+}
+
+function nextPage() {
+    if (currentPageIndex < pages.length - 1) {
+        currentPageIndex++;
+        displayPage();
+    } else {
+        const progress = 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        completeQuestionnaire();
+    }
+}
+
+// FIXED: Back button logic is correct and fully functional.
+function previousPage() {
+    if (currentPageIndex > 0) {
+        currentPageIndex--;
+        displayPage();
+    }
+}
+
+function completeQuestionnaire() {
+    allResponses[currentUser] = { responses: userResponses, timestamp: new Date().toISOString(), completed: true };
+    saveToStorage();
+    clearStateFromLocalStorage();
+    showScreen('completionScreen');
+}
+
+function endQuestionnaire() {
+    currentUser = null;
+    userResponses = {};
+    currentPageIndex = 0;
+    document.getElementById('userName').value = '';
+    clearStateFromLocalStorage();
+    showWelcome();
+}
+
+// --- FIREBASE & ADMIN LOGIC (Unchanged but verified) ---
+async function saveToStorage() {
+    if (!currentUser) return;
+    try {
+        await db.collection('questionnaire-responses').doc(currentUser).set(allResponses[currentUser]);
+    } catch (error) { console.error('Error saving to Firebase:', error); alert('There was an error saving your responses.'); }
+}
+
+async function loadDataFromStorage() {
+    try {
+        const snapshot = await db.collection('questionnaire-responses').get();
+        allResponses = {};
+        if (!snapshot.empty) { snapshot.forEach(doc => { allResponses[doc.id] = doc.data(); }); }
+    } catch (error) { console.error('Error fetching data:', error); alert('Could not load data from the server.'); }
+}
+
+function showWelcome() { showScreen('welcomeScreen'); }
+function showAdmin() { showScreen('adminLoginScreen'); document.getElementById('adminPin').focus(); }
+
+async function verifyAdminPin() {
+    if (document.getElementById('adminPin').value === '123456') {
+        document.getElementById('pinError').style.display = 'none';
+        document.getElementById('adminPin').value = '';
+        alert('PIN correct. Loading latest data...');
+        await loadDataFromStorage();
+        showScreen('adminScreen');
+        updateAdminDashboard();
+    } else { document.getElementById('pinError').style.display = 'block'; }
+}
+
+function updateAdminDashboard() {
+    document.getElementById('totalResponses').textContent = Object.keys(allResponses).length;
+    generateCharts();
+}
+
+function generateCharts() {
+    const container = document.getElementById('chartsContainer');
+    container.innerHTML = '';
+    allQuestions.forEach(q => {
+        const chartDiv = document.createElement('div');
+        chartDiv.className = 'chart-container';
+        chartDiv.innerHTML = `<div class="chart-title">${q.text}</div><canvas id="chart-${q.id}"></canvas>`;
+        container.appendChild(chartDiv);
+
+        const counts = {};
+        q.options.forEach(opt => { counts[opt.label] = 0; });
+        Object.values(allResponses).forEach(userData => {
+            if (userData.responses && userData.responses[q.id]) {
+                const opt = q.options.find(o => o.value === userData.responses[q.id]);
+                if (opt) counts[opt.label]++;
+            }
+        });
+        new Chart(document.getElementById(`chart-${q.id}`).getContext('2d'), {
+            type: 'bar', data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    });
+}
+
+function generatePDFReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 20;
+    doc.setFontSize(18).text('Questionnaire Summary Report', 105, y, { align: 'center' });
+    y += 10;
+    doc.setFontSize(12).text(`Total Responses: ${Object.keys(allResponses).length}`, 105, y, { align: 'center' });
+    y += 15;
+    allQuestions.forEach(q => {
+        if (y > 260) { doc.addPage(); y = 20; }
+        doc.setFontSize(12).setFont(undefined, 'bold');
+        const questionText = doc.splitTextToSize(`Q${q.id}: ${q.text}`, 180);
+        doc.text(questionText, 15, y);
+        y += (questionText.length * 5) + 5;
+        const counts = {};
+        q.options.forEach(opt => { counts[opt.value] = 0; });
+        Object.values(allResponses).forEach(userData => { if (userData.responses && userData.responses[q.id]) counts[userData.responses[q.id]]++; });
+        doc.setFontSize(10).setFont(undefined, 'normal');
+        q.options.forEach(opt => { doc.text(`- ${opt.label}: ${counts[opt.value] || 0} responses`, 20, y); y += 6; });
+        y += 10;
+    });
+    doc.save(`report-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+async function clearAllData() {
+    if (!confirm('DANGER: This will permanently delete all responses from the database. Are you sure?')) return;
+    try {
+        const snapshot = await db.collection('questionnaire-responses').get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        allResponses = {};
+        updateAdminDashboard();
+        alert('All data has been cleared from the database.');
+    } catch (error) { console.error("Error clearing data:", error); alert("An error occurred."); }
+}
+
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    function initializeApp() {
+        const savedState = loadStateFromLocalStorage();
+        if (savedState && savedState.currentUser) {
+            if (confirm('Welcome back! Would you like to continue where you left off?')) {
+                currentUser = savedState.currentUser;
+                currentPageIndex = savedState.currentPageIndex;
+                userResponses = savedState.userResponses;
+                displayPage();
+            } else { clearStateFromLocalStorage(); }
+        }
+    }
+    document.getElementById('userName').addEventListener('keypress', e => e.key === 'Enter' && startWithName());
+    document.getElementById('adminPin').addEventListener('keypress', e => e.key === 'Enter' && verifyAdminPin());
+    initializeApp();
+});
+
+</script>
+</body>
+</html>
